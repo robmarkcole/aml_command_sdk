@@ -1,4 +1,4 @@
-# How to train and deploy in Azure ML, using the Python SDK
+# Fashion MNIST model with MLflow
 This project shows how to train a Fashion MNIST model with MLflow for tracking and model representation.
 
 <p align="center">
