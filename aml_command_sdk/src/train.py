@@ -21,6 +21,7 @@ from utils_train_nn import evaluate, fit
 DATA_DIR = "aml_command_sdk/data"
 MODEL_DIR = "aml_command_sdk/model/"
 
+mlflow.set_tracking_uri("http://localhost:5000") # https://stackoverflow.com/questions/63255631/mlflow-invalid-parameter-value-unsupported-uri-mlruns-for-model-registry-s
 
 def load_train_val_data(
     data_dir: str, batch_size: int, training_fraction: float

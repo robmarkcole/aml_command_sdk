@@ -1,77 +1,54 @@
 # How to train and deploy in Azure ML, using the Python SDK
+This project shows how to train a Fashion MNIST model with MLflow for tracking and model representation.
 
-This project shows how to train a Fashion MNIST model with an Azure ML job, and how to deploy it using an online managed endpoint. It uses the Azure ML Python SDK API, and MLflow for tracking and model representation.
+<p align="center">
+<img src="usage.png" width="950">
+</p>
 
+## Workflow
 
-## Blog post
-
-To learn more about the code in this repo, check out the accompanying blog post: https://bea.stollnitz.com/blog/aml-command/
-
-
-## Setup
-
-* You need to have an Azure subscription. You can get a [free subscription](https://azure.microsoft.com/en-us/free?WT.mc_id=aiml-67316-bstollnitz) to try it out.
-* Create a [resource group](https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/manage-resource-groups-portal?WT.mc_id=aiml-67316-bstollnitz).
-* Create a new machine learning workspace by following the "Create the workspace" section of the [documentation](https://docs.microsoft.com/en-us/azure/machine-learning/quickstart-create-resources?WT.mc_id=aiml-67316-bstollnitz). Keep in mind that you'll be creating a "machine learning workspace" Azure resource, not a "workspace" Azure resource, which is entirely different!
-* If you have access to GitHub Codespaces, click on the "Code" button in this GitHub repo, select the "Codespaces" tab, and then click on "New codespace."
-* Alternatively, if you plan to use your local machine:
-  * Install the Azure CLI by following the instructions in the [documentation](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?WT.mc_id=aiml-67316-bstollnitz).
-  * Install the ML extension to the Azure CLI by following the "Installation" section of the [documentation](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-configure-cli?WT.mc_id=aiml-67316-bstollnitz).
-  * Install and activate the conda environment by executing the following commands:
-  ```
-  conda env create -f environment.yml
-  conda activate aml_command_sdk
-  ```
-* In a terminal window, log in to Azure by executing `az login --use-device-code`. 
-* Add a `config.json` file to the root of your project (or somewhere in the parent folder hierarchy) containing your Azure subscription ID, resource group, and workspace:
+Install and activate the conda environment by executing the following commands:
 ```
-{
-    "subscription_id": "<YOUR_SUBSCRIPTION_ID>",
-    "resource_group": "<YOUR_RESOURCE_GROUP>",
-    "workspace_name": "<YOUR_WORKSPACE>"
-}
-```
-* You can now open the [Azure Machine Learning studio](https://ml.azure.com/?WT.mc_id=aiml-67316-bstollnitz), where you'll be able to see and manage all the machine learning resources we'll be creating.
-* Install the [Azure Machine Learning extension for VS Code](https://marketplace.visualstudio.com/items?itemName=ms-toolsai.vscode-ai), and log in to it by clicking on "Azure" in the left-hand menu, and then clicking on "Sign in to Azure."
-
-
-## Train and predict locally
-
-* Under "Run and Debug" on VS Code's left navigation, choose the "Train locally" run configuration and press F5.
-* You can analyze the metrics logged in the "mlruns" directory with the following command:
-
-```
-mlflow ui
+conda env create -f environment.yml
+conda activate aml_command_sdk
 ```
 
-* Make a local prediction using the trained mlflow model. You can use either csv or json files:
+Run mlflow: [http://0.0.0.0:5000/](http://0.0.0.0:5000/)
+```
+# mlflow ui
+mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlruns --host 0.0.0.0  # run with db
+```
 
+Train:
+```
+python aml_command_sdk/src/train.py
+```
+
+Make a local prediction using the trained mlflow model. You can use either csv or json files:
 ```
 cd aml_command_sdk
 mlflow models predict --model-uri "model" --input-path "test_data/images.csv" --content-type csv --env-manager local
-mlflow models predict --model-uri "model" --input-path "test_data/images.json" --content-type json --env-manager local
+# mlflow models predict --model-uri "model" --input-path "test_data/images.json" --content-type json --env-manager local
 ```
 
+Output
+```json
+[{"0": -2.0759499073028564, "1": -4.7272443771362305, "2": -3.398890495300293, "3": -1.2607831954956055, "4": -3.444779396057129, "5": 5.748242378234863, "6": -2.530381441116333, "7": 6.370605945587158, "8": 2.538969039916992, "9": 7.854280948638916}, {"0": 4.441205024719238, "1": -3.6761248111724854, "2": 11.795886039733887, "3": 0.3185560405254364, "4": 6.609316825866699, "5": -6.741459369659424, "6": 7.912017345428467}]
+```
 
-## Train and deploy in the cloud
+## Issue 1
+In MLflow I got an error:
+```
+INVALID_PARAMETER_VALUE: Model registry functionality is unavailable; got unsupported URI './mlruns' for model registry data storage. Supported URI schemes are: ['postgresql', 'mysql', 'sqlite', 'mssql']. See https://www.mlflow.org/docs/latest/tracking.html#storage for how to run an MLflow server against one of the supported backend storage locations.
+```
+[Solution](https://stackoverflow.com/questions/63255631/mlflow-invalid-parameter-value-unsupported-uri-mlruns-for-model-registry-s) = run with a db, also register location of models:
+
+```bash
+mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlruns --host 0.0.0.0 
+```
+## Issue 2
+The trained model does not display in MLflow
 
 
-### Create and run the job, which outputs a model
-
-Select the run configuration "Train in the cloud" and press F5 to train in the cloud.
-
-
-### Create and invoke the endpoint for the model
-
-Select the run configuration "Create endpoint" and press F5 to create an endpoint in the cloud and invoke it.
-
-
-### Clean up the endpoint
-
-Once you're done working with the endpoint, you can clean it up to avoid getting charged by selecting the "Delete endpoint" run configuration and pressing F5.
-
-
-## Related resources
-* [YAML schema for Command Job](https://docs.microsoft.com/en-us/azure/machine-learning/reference-yaml-job-command?WT.mc_id=aiml-67316-bstollnitz)
-* [az ml job commands](https://docs.microsoft.com/en-us/cli/azure/ml/job?view=azure-cli-latest#az-ml-job-create?WT.mc_id=aiml-67316-bstollnitz)
-* [Output formats for Azure CLI commands](https://docs.microsoft.com/en-us/cli/azure/format-output-azure-cli?WT.mc_id=aiml-67316-bstollnitz)
+## Blog post
+To learn more about the code in this repo, check out the accompanying blog post: https://bea.stollnitz.com/blog/aml-command/
